@@ -1,0 +1,305 @@
+#           13.4. H2O DL Survival prediction model - LICA
+#       Author: Alexperezm | Master's End of Degree Project - 2021-2022
+
+#Objective: Development of a Deep Learning model, that based on the expression of
+#protein coding gene set of LICA, will pretend to the survival of that patient
+#(in days).
+
+
+#Library loading:
+library(tidyverse)
+library(lubridate)
+library(tidymodels)
+library(skimr)
+library(DataExplorer)
+library(ggpubr)
+library(mosaicData)
+library(h2o)
+library(readxl)
+
+setwd("")
+
+# Data processing:
+#########################################################
+LICA_normalized_filtered_genetype <- read_excel("LICA_normalized_filtered_genetype.xlsx")
+
+#LICA_normalized_filtered_genetype <- LICA_normalized_filtered_genetype[,-c(dim(LICA_normalized_filtered_genetype)-3)]
+
+protein_coding <- filter(LICA_normalized_filtered_genetype, GENETYPE == "protein-coding")
+
+cnames <- (protein_coding$gene_id)
+
+protein_coding <- select(protein_coding,-c(SYMBOL,GENENAME,GENETYPE))
+protein_coding <- select(protein_coding,-gene_id)
+protein_coding <- as.tibble(t(protein_coding))
+
+survival <- read_excel("survival.xlsx", na = "NA")
+survival <- survival[,2]
+survival <- as.tibble(survival)
+
+
+protein_coding[,(dim(protein_coding)[2]+1)] <- survival
+colnames(protein_coding) <- cnames
+colnames(protein_coding)[dim(protein_coding)[2]] <- "OS"
+Data <- protein_coding
+
+# Split data into train and test:
+# ==============================================================================
+#set.seed(123)
+split_inicial <- initial_split(
+  data   = Data,
+  prop   = 0.8,
+  strata = OS
+)
+
+datos_train <- training(split_inicial)
+datos_test  <- testing(split_inicial)
+
+summary(datos_train$OS)
+summary(datos_test$OS)
+
+
+#Raw data must be processed to remove NA, dummy variables, etc. A recipe has been
+#developed.
+transformer <- recipe(
+  formula = OS ~ .,
+  data =  datos_train
+) %>%
+  step_naomit(all_predictors()) %>%
+  step_nzv(all_predictors()) %>%
+  step_center(all_numeric(), -all_outcomes()) %>%
+  step_scale(all_numeric(), -all_outcomes()) %>%
+  step_dummy(all_nominal(), -all_outcomes())
+
+transformer
+
+
+# The recipe is trained:
+transformer_fit <- prep(transformer)
+
+# Transformations are developed for both: trainand test datasets:
+datos_train_prep <- bake(transformer_fit, new_data = datos_train)
+datos_test_prep  <- bake(transformer_fit, new_data = datos_test)
+
+glimpse(datos_train_prep)
+
+
+# Cluster initialization:
+# ==============================================================================
+h2o.init(
+  nthreads = -1,
+  max_mem_size = "4g"
+)
+
+
+# Remove all data already available in the cluster:
+h2o.removeAll()
+h2o.no_progress()
+
+datos_train  <- as.h2o(datos_train_prep, key = "datos_train")
+datos_test   <- as.h2o(datos_test_prep, key = "datos_test")
+
+# Defining hyperparameters:
+# ==============================================================================
+hiperparametros <- list(
+  epochs = c(50, 100, 500, 1000),
+  hidden = list(5, 10, 25, 50,100, c(10, 10))
+)
+
+
+# Search of best models by cross-validation:
+# ==============================================================================
+variable_respuesta <- 'OS'
+predictores <- setdiff(colnames(datos_train), variable_respuesta)
+
+grid <- h2o.grid(
+  algorithm    = "deeplearning",
+  activation   = "Rectifier",
+  x            = predictores,
+  y            = variable_respuesta,
+  training_frame  = datos_train,
+  nfolds       = 20, #validacion cruzad
+  standardize  = FALSE,
+  hyper_params = hiperparametros,
+  search_criteria = list(strategy = "Cartesian"),
+  #seed         = 123,
+  grid_id      = "grid"
+)
+
+resultados_grid <- h2o.getGrid(
+  sort_by = 'rmse',
+  grid_id = "grid",
+  decreasing = FALSE
+)
+data.frame(resultados_grid@summary_table)
+
+# Best model found:
+# ==============================================================================
+modelo_final <- h2o.getModel(resultados_grid@model_ids[[1]])
+
+predicciones <- h2o.predict(
+  object  = modelo_final,
+  newdata = datos_test
+)
+
+predicciones <- predicciones %>%
+  as_tibble() %>%
+  mutate(valor_real = as.vector(datos_test$M))
+
+predicciones %>% head(5)
+
+#rmse(predicciones, truth = M, estimate = predict, na_rm = TRUE)
+
+modelo_final@allparameters
+
+mojo_destination <- h2o.save_mojo(modelo_final, path = getwd(),filename = "modelo_survival_coding_genes")
+
+write.csv(predicciones,"predict_survival_coding.csv")
+
+# Before finishing the script, the H2O cluster must be shutdown:
+# ==============================================================================
+h2o.shutdown(prompt = FALSE)
+
+################################################################################
+################################################################################
+################################################################################
+
+ncRNA <- filter(LICA_normalized_filtered_genetype, GENETYPE == "ncRNA"| GENETYPE=="pseudo")
+
+cnames <- (ncRNA$gene_id)
+
+ncRNA <- select(ncRNA,-c(SYMBOL,GENENAME,GENETYPE))
+ncRNA <- select(ncRNA,-gene_id)
+ncRNA <- as.tibble(t(ncRNA))
+
+survival <- read_excel("survival.xlsx", na = "NA")
+survival <- survival[,2]
+survival <- as.tibble(survival)
+
+
+ncRNA[,(dim(ncRNA)[2]+1)] <- survival
+colnames(ncRNA) <- cnames
+colnames(ncRNA)[dim(ncRNA)[2]] <- "OS"
+Data <- ncRNA
+
+# Reparto de datos en train y test
+# ==============================================================================
+set.seed(123)
+split_inicial <- initial_split(
+  data   = Data,
+  prop   = 0.8,
+  strata = OS
+)
+
+datos_train <- training(split_inicial)
+datos_test  <- testing(split_inicial)
+
+summary(datos_train$OS)
+summary(datos_test$OS)
+
+
+# Se almacenan en un objeto `recipe` todos los pasos de preprocesado y, finalmente,
+# se aplican a los datos.
+transformer <- recipe(
+  formula = OS ~ .,
+  data =  datos_train
+) %>%
+  step_naomit(all_predictors()) %>%
+  step_nzv(all_predictors()) %>%
+  step_center(all_numeric(), -all_outcomes()) %>%
+  step_scale(all_numeric(), -all_outcomes()) %>%
+  step_dummy(all_nominal(), -all_outcomes())
+
+transformer
+
+
+# Se entrena el objeto recipe
+transformer_fit <- prep(transformer)
+
+# Se aplican las transformaciones al conjunto de entrenamiento y de test
+datos_train_prep <- bake(transformer_fit, new_data = datos_train)
+datos_test_prep  <- bake(transformer_fit, new_data = datos_test)
+
+glimpse(datos_train_prep)
+
+
+# Inicialización del cluster
+# ==============================================================================
+h2o.init(
+  nthreads = -1,
+  max_mem_size = "4g"
+)
+
+
+# Se eliminan los datos del cluster por si ya había sido iniciado.
+h2o.removeAll()
+h2o.no_progress()
+
+datos_train  <- as.h2o(datos_train_prep, key = "datos_train")
+datos_test   <- as.h2o(datos_test_prep, key = "datos_test")
+
+# Espacio de búsqueda de cada hiperparámetro
+# ==============================================================================
+hiperparametros <- list(
+  epochs = c(50, 100, 500, 1000),
+  hidden = list(5, 10, 25, 50,100, c(10, 10))
+)
+
+
+# Búsqueda por validación cruzada
+# ==============================================================================
+variable_respuesta <- 'OS'
+predictores <- setdiff(colnames(datos_train), variable_respuesta)
+
+grid <- h2o.grid(
+  algorithm    = "deeplearning",
+  activation   = "Rectifier",
+  x            = predictores,
+  y            = variable_respuesta,
+  training_frame  = datos_train,
+  nfolds       = 20, #validacion cruzada
+  standardize  = FALSE,
+  hyper_params = hiperparametros,
+  search_criteria = list(strategy = "Cartesian"),
+  seed         = 123,
+  grid_id      = "grid"
+)
+
+resultados_grid <- h2o.getGrid(
+  sort_by = 'rmse',
+  grid_id = "grid",
+  decreasing = FALSE
+)
+data.frame(resultados_grid@summary_table)
+
+# Mejor modelo encontrado
+# ==============================================================================
+modelo_final <- h2o.getModel(resultados_grid@model_ids[[1]])
+
+predicciones <- h2o.predict(
+  object  = modelo_final,
+  newdata = datos_test
+)
+
+predicciones <- predicciones %>%
+  as_tibble() %>%
+  mutate(valor_real = as.vector(datos_test$OS))
+
+predicciones %>% head(5)
+
+#rmse(predicciones, truth = M, estimate = predict, na_rm = TRUE)
+
+modelo_final@allparameters
+
+#h2o.saveModel(modelo_final, path = getwd(), filename = "mymodel")
+#saved_model <- h2o.loadModel("C:/Users/Alex/OneDrive - alumni.unav.es/Master_Metodos_Computacionales_en_Ciencias/Machine learning/FINAL/mymodel")
+#my_local_model <- h2o.download_model(modelo_final, path = getwd())
+
+mojo_destination <- h2o.save_mojo(modelo_final, path = getwd(),filename = "modelo_pseudo+nc_nfold20")
+#imported_model <- h2o.import_mojo(mojo_destination)
+
+#h2o.predict(imported_model, datos_test)
+# Se apaga el cluster H2O
+h2o.shutdown(prompt = FALSE)
+
+(sum(predicciones[,1]==predicciones[,5]))/dim(predicciones)[1]
