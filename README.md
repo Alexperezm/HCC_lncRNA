@@ -10,9 +10,9 @@ Para analizar si el transcriptoma no codificante permite la estratificación de 
 En esta web se encuentran los ficheros y scripts utilizados a lo largo del proyecto:
 
 1. Muestras de pacientes:
-  - 01_NASIR_binding.r
-  - 01_NASIR_P.csv
-  - 01_NASIR_T.csv
+ - 01_NASIR_binding.r
+   - 01_NASIR_P.csv
+   - 01_NASIR_T.csv
 
 
 2,4. Normalización, Differential Gene Expression Analysis - Gene Set Enrichment Analysis (GSEA):
