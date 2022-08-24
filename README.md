@@ -12,29 +12,18 @@ En esta web se encuentran los ficheros y scripts utilizados a lo largo del proye
 
 1. Muestras de pacientes:
  - 01_NASIR_binding.r
-   - 01_NASIR_P.csv
-   - 01_NASIR_T.csv
 
 
 2,4. Normalización, Differential Gene Expression Analysis - Gene Set Enrichment Analysis (GSEA):
   - 02_NASIR_Differential_gene_expression_analysis.r
-    - 02_NASIR_resSig.rds
-    - 03_NASIR_FINAL_TABLE_COUNTS.7z
   - 04_NASIR_Gene_Annotation_Gene_Ontology.r
-  - 02_LICA_Normalization.r
-   - 02_LICA_Normalized_Dataset.7z
   - 4_LICA_Gene_Annotation.r
   - 4_LICA_Differential_Expression_Gene_Set_Enrichment_Analysis.r
-    - 4_1_SummarizedExperiment_quantile_58k.rds
-    - 4_2_resSig_anotado_cuantiles58k.rds
-    - 4_3_DESeq2_Sig_results_anotado_cuantiles58k.tab
-
 
 3. Análisis de supervivencia:
   - 03_NASIR_survival.r
   - 03_LICA_Cox_Regression.py
   -  03_LICA_Cox_Regression.ipynb
-    - 03_LICA_survival.xlsx
 
 5. Modelos predictivos:
 
