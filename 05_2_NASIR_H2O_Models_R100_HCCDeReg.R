@@ -61,7 +61,7 @@ t_resumen[1,2] <- sum(match_filt[33,])
 t_resumen[2,2] <- sum(match_filt[34,])
 t_resumen[3,2] <- sum(match_filt[35,])
 t_resumen[4,2] <- sum(match_filt[36,],na.rm=TRUE)
-colnames(t_resumen) <- c("Filtro","N� filtrados")
+colnames(t_resumen) <- c("Filtro","Nº filtrados")
 
 
 i <- 1
@@ -114,7 +114,7 @@ t_resumen_de_reg[1,2] <- sum(match_filt_de_reg[33,])
 t_resumen_de_reg[2,2] <- sum(match_filt_de_reg[34,])
 t_resumen_de_reg[3,2] <- sum(match_filt_de_reg[35,])
 t_resumen_de_reg[4,2] <- sum(match_filt_de_reg[36,],na.rm=TRUE)
-colnames(t_resumen_de_reg) <- c("Filtro","N� filtrados")
+colnames(t_resumen_de_reg) <- c("Filtro","Nº filtrados")
 
 
 i <- 1
@@ -208,7 +208,7 @@ h2o.init(
 )
 
 
-# Se eliminan los datos del cluster por si ya había sido iniciado.
+# Se eliminan los datos del cluster por si ya habÃ­a sido iniciado.
 h2o.removeAll()
 h2o.no_progress()
 
