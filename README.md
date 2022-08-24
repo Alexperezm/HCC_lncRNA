@@ -65,3 +65,10 @@ En esta web se encuentran los ficheros y scripts utilizados a lo largo del proye
       - 05_2_2_LICA_H2O_survival_tercil.r
       - 05_2_3_LICA_H2O_survival_pseudo_nc.r
       - 05_2_4_LICA_H2O_survival_binary.r
+
+
+---
+
+Versiones de las librerías de R y Python utilizadas durante el proyecto:
+- R: r_library_version
+- Python: python_library_version 
