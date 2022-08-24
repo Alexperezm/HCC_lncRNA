@@ -3,6 +3,7 @@ Uso de datos masivos de hepatocarcinoma para estratificar pacientes y predecir n
 
 ## Objetivo:
 Estudios previos basados en el análisis transcriptómicos de genes codificantes han conseguido estratificar pacientes con Hepatocarcinoma en agrupaciones con relevancia clínica. Teniendo en cuenta que los genes no codificantes son más específicos de tumor y tejido que los codificantes, pensamos que podrían permitir una clasificación más relevante clínicamente de los pacientes, en especial, con una asociación más significativa con la supervivencia. 
+
 Para analizar si el transcriptoma no codificante permite la estratificación de los pacientes, en este proyecto se utilizarán datos de secuenciación de RNA de distintas cohortes. Se compararán diversas técnicas y se realizará una evaluación crítica de los resultados obtenidos con cada una de ellas. 
 
 ---
