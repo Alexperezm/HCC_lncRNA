@@ -67,6 +67,7 @@ En esta web se encuentran los ficheros y scripts utilizados a lo largo del proye
       - 05_2_3_LICA_H2O_survival_pseudo_nc.r
       - 05_2_4_LICA_H2O_survival_binary.r
 
+__*Se ha seguido la misma numeración que en la memoria.__
 
 ---
 
